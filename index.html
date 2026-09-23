@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Tunika Hisob</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #f6f5f2; --surface: #ffffff; --surface-2: #f0eee8; --text: #1a1815; --text-dim: #78716a;
+    --border: #e7e3da; --accent: #e0632a; --accent-2: #ff8a4c; --accent-dim: #fdeadd;
+    --good: #2f8f52; --good-bg: #e5f4ea; --bad: #d6432f; --bad-bg: #fbe6e2;
+    --shadow: 0 1px 2px rgba(20,16,8,.04), 0 4px 14px rgba(20,16,8,.06); --radius: 16px;
+  }
+  :root[data-theme="dark"] {
+    --bg: #14120f; --surface: #1f1c17; --surface-2: #27231c; --text: #f4efe6; --text-dim: #ada79a;
+    --border: #38332a; --accent: #ff8a4c; --accent-2: #ffab7a; --accent-dim: #3d2a1a;
+    --good: #7bd39a; --good-bg: #1c3324; --bad: #ef8577; --bad-bg: #3a231e;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 14px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  body { overflow-x: hidden; }
+  #app { max-width: 760px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+  header.topbar { position: sticky; top: 0; z-index: 10; padding: 14px 16px 10px;
+    background: linear-gradient(180deg, var(--bg) 75%, transparent); display: flex; align-items: center; gap: 10px; }
+  .hbtn { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; width: 40px; height: 40px;
+    font-size: 17px; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow); flex-shrink: 0; }
+  header.topbar .ttl { flex: 1; min-width: 0; }
+  header.topbar h1 { font-size: 19px; margin: 0; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header.topbar .sub { font-size: 12.5px; color: var(--text-dim); margin-top: 1px; }
+  main { flex: 1; padding: 4px 16px 100px; }
+  .searchbox { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 4px 14px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .searchbox input { border: none !important; background: none !important; outline: none; flex: 1; font-size: 15px; color: var(--text); padding: 8px 0 !important; }
+  .avatar { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; color: #fff; flex-shrink: 0; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px;
+    margin-bottom: 10px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; }
+  .card.tap { cursor: pointer; transition: transform .08s; }
+  .card.tap:active { transform: scale(0.98); }
+  .card.block { display: block; }
+  .card .body { flex: 1; min-width: 0; }
+  .card h3 { margin: 0 0 3px; font-size: 15.5px; font-weight: 700; }
+  .meta { font-size: 12.5px; color: var(--text-dim); }
+  .chev { color: var(--text-dim); font-size: 18px; flex-shrink: 0; }
+  .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); min-width: 0; }
+  .stat .v { font-size: 18px; font-weight: 800; overflow-wrap: anywhere; }
+  .stat .l { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .stat.accent { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border: none; }
+  .stat.accent .l { color: rgba(255,255,255,.88); }
+  .fab { position: fixed; right: max(16px, calc(50% - 364px)); bottom: calc(80px + env(safe-area-inset-bottom,0px));
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border: none; border-radius: 50%;
+    width: 58px; height: 58px; font-size: 26px; box-shadow: 0 6px 18px rgba(224,99,42,.4); cursor: pointer; z-index: 20;
+    display: flex; align-items: center; justify-content: center; }
+  .fab.nobar { bottom: calc(20px + env(safe-area-inset-bottom,0px)); }
+  .empty { text-align: center; color: var(--text-dim); padding: 50px 24px; font-size: 14.5px; line-height: 1.6; }
+  .empty .ic { font-size: 40px; display: block; margin-bottom: 10px; }
+  .tabbar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 15; background: var(--surface); border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .tabbar .in { max-width: 760px; margin: 0 auto; display: flex; }
+  .tabbar button { flex: 1; padding: 9px 4px 8px; background: none; border: none; color: var(--text-dim); font-size: 11.5px;
+    cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .tabbar .ic { font-size: 20px; width: 42px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
+  .tabbar button.active { color: var(--accent); font-weight: 700; }
+  .tabbar button.active .ic { background: var(--accent-dim); }
+  .pill { display: inline-block; font-size: 10.5px; padding: 3px 9px; border-radius: 100px; font-weight: 800; white-space: nowrap; }
+  .pill.done { background: var(--good-bg); color: var(--good); }
+  .pill.partial { background: var(--accent-dim); color: var(--accent); }
+  .pill.none { background: var(--surface-2); color: var(--text-dim); }
+  .pill.bad { background: var(--bad-bg); color: var(--bad); }
+  .shape { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px;
+    background: var(--surface-2); font-size: 11px; color: var(--text-dim); flex-shrink: 0; }
+  .link { font-size: 13px; color: var(--accent); cursor: pointer; font-weight: 700; background: none; border: none; padding: 6px 0; }
+  .link.danger { color: var(--bad); }
+  .summary { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  .summary .row { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; padding: 4px 0; color: var(--text-dim); }
+  .summary .row b { color: var(--text); }
+  .summary .row.total { font-weight: 800; font-size: 16px; color: var(--text); border-top: 1px solid var(--border); margin-top: 6px; padding-top: 10px; }
+  .summary .row.debt b { color: var(--bad); font-size: 16px; }
+  .summary .row.ok b { color: var(--good); }
+  .sec { font-size: 12.5px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em;
+    margin: 18px 2px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  .tlist { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 12px; }
+  .trow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .trow:last-child { border-bottom: none; }
+  .trow .m { flex: 1; min-width: 0; }
+  .trow .n { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .trow .s { font-size: 11.5px; color: var(--text-dim); margin-top: 3px; }
+  .trow .q { font-size: 12px; color: var(--text-dim); text-align: right; white-space: nowrap; flex-shrink: 0; }
+  .trow .q b { color: var(--text); font-size: 15px; }
+  .ibtn { width: 34px; height: 34px; border-radius: 10px; border: none; background: var(--surface-2); color: var(--text-dim);
+    display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; flex-shrink: 0; }
+  .hist { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+  .hist:last-child { border-bottom: none; }
+  .hist .top { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .hist .it { color: var(--text-dim); }
+  .hist .mo { margin-top: 3px; font-size: 12px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .chip { padding: 9px 14px; border-radius: 100px; border: 1.5px solid var(--border); background: var(--surface-2);
+    font-size: 13.5px; cursor: pointer; color: var(--text); font-weight: 600; user-select: none; }
+  .chip.sel { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .chip.sm { padding: 7px 12px; font-size: 12.5px; }
+  .backdrop { position: fixed; inset: 0; background: rgba(15,12,8,.5); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+  .modal { background: var(--surface); width: 100%; max-width: 760px; border-radius: 20px 20px 0 0;
+    padding: 18px 18px calc(18px + env(safe-area-inset-bottom,0px)); max-height: 90vh; overflow-y: auto; }
+  .handle { width: 40px; height: 4px; background: var(--border); border-radius: 4px; margin: -4px auto 14px; }
+  .modal h2 { margin: 0 0 4px; font-size: 18px; font-weight: 800; }
+  .msub { font-size: 12.5px; color: var(--text-dim); margin-bottom: 4px; }
+  label.fl { display: block; font-size: 12.5px; color: var(--text-dim); margin: 14px 0 6px; font-weight: 700; }
+  input[type=text], input[type=number], input[type=tel], select {
+    width: 100%; padding: 13px 14px; border-radius: 12px; border: 1.5px solid var(--border);
+    background: var(--surface-2); color: var(--text); font-size: 16px; font-family: inherit; }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  .actions { display: flex; gap: 10px; margin-top: 22px; }
+  .btn { flex: 1; padding: 14px; border-radius: 14px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; }
+  .btn.ghost { background: var(--surface-2); color: var(--text); }
+  .btn.danger { background: var(--bad-bg); color: var(--bad); }
+  .btn.good { background: var(--good-bg); color: var(--good); }
+  .hint { font-size: 12px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
+  .warn { font-size: 12px; color: var(--bad); }
+  .crow { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .crow:last-child { border-bottom: none; }
+  .crow .m { flex: 1; min-width: 0; }
+  .crow .n { font-weight: 700; font-size: 14px; }
+  .crow .s { font-size: 11.5px; color: var(--text-dim); margin-top: 1px; }
+  .step { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .step button { width: 36px; height: 36px; border-radius: 10px; border: none; font-size: 18px; font-weight: 800; cursor: pointer; }
+  .step .mi { background: var(--bad-bg); color: var(--bad); }
+  .step .pl { background: var(--good-bg); color: var(--good); }
+  .step input { width: 56px !important; padding: 8px 4px !important; text-align: center; font-weight: 800; }
+  .ctotal { display: flex; justify-content: space-between; align-items: center; padding: 14px 0 2px; font-weight: 800; font-size: 16px;
+    border-top: 1px solid var(--border); margin-top: 8px; }
+  .code-box { font-size: 34px; font-weight: 900; letter-spacing: 6px; text-align: center; padding: 18px; background: var(--surface-2);
+    border-radius: 14px; margin: 12px 0; user-select: all; }
+  .center-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    min-height: 80vh; padding: 24px; gap: 8px; }
+  .center-screen .big { font-size: 46px; }
+  .center-screen h2 { margin: 6px 0; }
+  .center-screen .box { width: 100%; max-width: 360px; margin-top: 14px; text-align: left; }
+  #busy { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 100; display: none; overflow: hidden; }
+  #busy::after { content: ''; position: absolute; left: -40%; width: 40%; height: 100%; background: var(--accent); animation: slide 1s infinite ease-in-out; }
+  @keyframes slide { to { left: 100%; } }
+  #shield { position: fixed; inset: 0; z-index: 90; display: none; background: rgba(0,0,0,.08); }
+  #toast { position: fixed; left: 50%; bottom: calc(90px + env(safe-area-inset-bottom,0px)); transform: translateX(-50%); z-index: 110;
+    background: #2a2520; color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 14px; max-width: 90vw; display: none; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+  #toast.err { background: var(--bad); }
+</style>
+</head>
+<body>
+<div id="busy"></div><div id="shield"></div><div id="toast"></div>
+<div id="app">
+  <div id="topbar-slot"></div>
+  <main id="main-slot"></main>
+</div>
+<div id="tabbar-slot"></div>
+<div id="modal-slot"></div>
+
+<script>
+// ================== SOZLAMA ==================
+var CONFIG = { API_URL: 'https://script.google.com/macros/s/AKfycbxMMlih0AZ8paTy7-ZQdc0U8MiaCJe7q-ym_huJz7KKLgwVhvpHaX0njtpz5nul5bDdmw/exec' };
+
+// ================== TELEGRAM ==================
+var tg = (window.Telegram && window.Telegram.WebApp) || null;
+if (tg) {
+  try { tg.ready(); tg.expand(); } catch (e) {}
+  if (tg.colorScheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  try { tg.onEvent('themeChanged', function () { document.documentElement.setAttribute('data-theme', tg.colorScheme === 'dark' ? 'dark' : 'light'); }); } catch (e) {}
+  try { tg.BackButton.onClick(function () { goBack(); }); } catch (e) {}
+}
+
+// ================== HOLAT ==================
+var S = {
+  role: null, me: null, screen: 'loading', fatal: null,
+  data: { installers: [], objects: [], items: [], norms: [], pickups: [], payments: [], users: [], config: {} },
+  installerId: null, objectId: null, cameFrom: null,
+  q: { inst: '', mat: '', items: '', all: '' }, filterAll: 'all', history: {}, busy: false
+};
+var modal = null;
+var cart = { lines: {}, payMode: 'full' };
+
+var TYPE_PRESETS = ['Truba','Otvod','Polotvod','Vreska','Perexod','Flanets','Diffuzor','Reshetka','Zaglushka','Zont'];
+var OBJ_TYPES = ['uy','korxona','restoran','apteka','kafe','boshqa'];
+var AVATAR_COLORS = ['#e0632a','#2f8f52','#3b6fd6','#a34fc9','#c9884f','#2b9b9b','#c9436b'];
+
+// ================== YORDAMCHILAR ==================
+function esc(s) { return s === null || s === undefined ? '' : String(s).replace(/[&<>"']/g, function (c) {
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function jsq(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+function groups(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+function money(n) { n = Math.round(Number(n) || 0); return (n < 0 ? '-' : '') + groups(Math.abs(n)) + " so'm"; }
+function qty(n) { n = Number(n) || 0; return Number.isInteger(n) ? groups(n) : String(Math.round(n * 100) / 100); }
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function dt(ms) { if (!ms) return ''; var d = new Date(Number(ms)); return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function dshort(ms) { if (!ms) return ''; var d = new Date(Number(ms)); return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear(); }
+function initials(name) { var n = String(name || '').trim(); if (!n) return '?'; var p = n.split(/\s+/);
+  return ((p[0].charAt(0) || '') + (p.length > 1 ? p[1].charAt(0) : '')).toUpperCase() || '?'; }
+function avatarColor(id) { var h = 0, s = String(id || ''); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % AVATAR_COLORS.length; return AVATAR_COLORS[h]; }
+function typeLabel(t) { return ({uy:'🏠 Uy', korxona:'🏭 Korxona', restoran:'🍽 Restoran', apteka:'💊 Apteka', kafe:'☕ Kafe', boshqa:'📍 Boshqa'})[t] || t; }
+function objIcon(t) { return ({uy:'🏠', korxona:'🏭', restoran:'🍽', apteka:'💊', kafe:'☕'})[t] || '📍'; }
+function itemName(it) { return esc(it.type) + ' ' + (it.shape === 'krug' ? 'Ø' : '') + esc(it.size); }
+function remaining(it) { return Math.max(0, (Number(it.orderedQty) || 0) - (Number(it.takenQty) || 0)); }
+function itemStatus(it) { if ((it.takenQty || 0) <= 0) return 'none'; if (remaining(it) <= 0) return 'done'; return 'partial'; }
+function itemStatusLabel(s) { return s === 'done' ? 'Olingan' : s === 'partial' ? 'Qisman' : 'Kutilmoqda'; }
+function isAdmin() { return S.role === 'admin'; }
+
+function D() { return S.data; }
+function findInst(id) { return D().installers.filter(function (x) { return x.id === id; })[0]; }
+function findObj(id) { return D().objects.filter(function (x) { return x.id === id; })[0]; }
+function findItem(id) { return D().items.filter(function (x) { return x.id === id; })[0]; }
+function itemsOf(objectId) { return D().items.filter(function (x) { return x.objectId === objectId; }); }
+
+function finance(filterFn) {
+  var items = D().items.filter(filterFn), pk = D().pickups.filter(filterFn), pay = D().payments.filter(filterFn);
+  var ordered = items.reduce(function (s, it) { return s + ((it.cost && it.cost.total) || 0); }, 0);
+  var taken = pk.reduce(function (s, p) { return s + (Number(p.totalAmount) || 0); }, 0);
+  var paid = pk.reduce(function (s, p) { return s + (Number(p.amountPaid) || 0); }, 0) + pay.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+  return { ordered: ordered, taken: taken, paid: paid, debt: taken - paid, pending: items.filter(function (it) { return remaining(it) > 0; }).length, count: items.length };
+}
+function objStatus(obj) {
+  if (Number(obj.completed)) return 'tugallangan';
+  var its = itemsOf(obj.id);
+  if (!its.length || !its.some(function (it) { return (it.takenQty || 0) > 0; })) return 'yangi';
+  return 'jarayonda';
+}
+function statusPill(st) {
+  var m = { tugallangan: ['done', '✅ Tugallangan'], jarayonda: ['partial', '🔧 Jarayonda'], yangi: ['none', '🆕 Yangi'] }[st] || ['none', st];
+  return '<span class="pill ' + m[0] + '">' + m[1] + '</span>';
+}
+
+// ================== UI XIZMATLARI ==================
+var toastTimer = null;
+function toast(msg, isErr) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.className = isErr ? 'err' : ''; t.style.display = 'block';
+  clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.style.display = 'none'; }, isErr ? 4500 : 2200);
+  try { if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred(isErr ? 'error' : 'success'); } catch (e) {}
+}
+function setBusy(on, blocking) {
+  S.busy = on;
+  document.getElementById('busy').style.display = on ? 'block' : 'none';
+  document.getElementById('shield').style.display = on && blocking ? 'block' : 'none';
+}
+function askConfirm(msg) {
+  return new Promise(function (resolve) {
+    if (tg && tg.showConfirm && tg.platform && tg.platform !== 'unknown') {
+      try { tg.showConfirm(msg, function (ok) { resolve(!!ok); }); return; } catch (e) {}
+    }
+    resolve(window.confirm(msg));
+  });
+}
+function humanError(msg) {
+  msg = String(msg || '');
+  if (/BAD_SIGNATURE|NO_INIT_DATA|BAD_INIT_DATA/.test(msg)) return "Telegram tasdig'idan o'tmadi. Ilovani bot orqali qayta oching.";
+  if (/EXPIRED/.test(msg)) return "Sessiya eskirdi. Ilovani yopib, qayta oching.";
+  if (/BOT_TOKEN/.test(msg)) return "Server sozlanmagan: BOT_TOKEN yo'q.";
+  if (/Failed to fetch|NetworkError|Load failed|network/i.test(msg)) return "Internet bilan muammo. Qayta urinib ko'ring.";
+  return msg;
+}
+
+// ================== SERVER BILAN ALOQA ==================
+function api(action, payload, opts) {
+  opts = opts || {};
+  if (S.busy && !opts.silent) return Promise.reject(new Error('busy'));
+  setBusy(true, !opts.silent);
+  return fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify({ initData: tg ? tg.initData : '', action: action, payload: payload || {} }) })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      if (j.role) S.role = j.role;
+      if (j.me) S.me = j.me;
+      if (j.data) S.data = j.data;
+      if (!j.ok) throw new Error(j.error || 'Xatolik');
+      return j;
+    })
+    .catch(function (e) {
+      if (!opts.silent || opts.showErrors) toast(humanError(e.message), true);
+      throw e;
+    })
+    .finally(function () { setBusy(false); if (!opts.noRender) afterData(); });
+}
+function afterData() {
+  if (S.role === 'admin' && ['loading','pending','blocked','myHome'].indexOf(S.screen) >= 0) S.screen = 'installers';
+  if (S.role === 'installer' && ['loading','pending','blocked','installers','materials','allObjects','users','installerDetail'].indexOf(S.screen) >= 0) S.screen = 'myHome';
+  if (S.role === 'installer') S.installerId = (D().installers[0] || {}).id || null;
+  if (S.role === 'pending') S.screen = 'pending';
+  if (S.role === 'blocked') S.screen = 'blocked';
+  if (S.screen === 'objectDetail' && !findObj(S.objectId)) S.screen = S.role === 'installer' ? 'myHome' : 'installers';
+  if (S.screen === 'installerDetail' && !findInst(S.installerId)) S.screen = 'installers';
+  renderScreen(true);
+}
+function refresh(silent) { return api('load', {}, { silent: silent }).catch(function () {}); }
+function act(action, payload, okMsg) {
+  return api(action, payload).then(function (j) { closeModal(); if (okMsg) toast(okMsg); return j; });
+}
+
+// ================== NAVIGATSIYA ==================
+function go(screen, extra) {
+  for (var k in (extra || {})) S[k] = extra[k];
+  S.screen = screen;
+  window.scrollTo(0, 0);
+  renderScreen();
+}
+function goBack() {
+  if (modal) { closeModal(); return; }
+  if (S.screen === 'objectDetail') {
+    if (S.role === 'installer') return go('myHome');
+    if (S.cameFrom === 'allObjects') return go('allObjects');
+    return go('installerDetail');
+  }
+  if (S.screen === 'installerDetail' || S.screen === 'users') return go('installers');
+}
+function openInstaller(id) { go('installerDetail', { installerId: id }); }
+function openObject(id, from) {
+  var o = findObj(id);
+  go('objectDetail', { objectId: id, installerId: o ? o.installerId : S.installerId, cameFrom: from || 'installerDetail', q: Object.assign(S.q, { items: '' }) });
+}
+
+// ================== MODAL (alohida DOM, ma'lumot yangilanganda tegilmaydi) ==================
+function openModal(type, payload) { modal = { type: type, p: payload || {} }; renderModal(); }
+function closeModal() { modal = null; renderModal(); }
+function renderModal() {
+  var slot = document.getElementById('modal-slot');
+  slot.innerHTML = modal ? '<div class="backdrop" onclick="if(event.target===this) closeModal()"><div class="modal"><div class="handle"></div>' + buildModal(modal) + '</div></div>' : '';
+  updateBackButton();
+  var af = slot.querySelector('[data-autofocus]');
+  if (af) setTimeout(function () { try { af.focus(); } catch (e) {} }, 60);
+}
+function val(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+function selVal(id) { var el = document.querySelector('#' + id + ' .chip.sel'); return el ? el.getAttribute('data-v') : ''; }
+function pick(el) { var r = el.parentElement; r.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('sel'); }); el.classList.add('sel'); }
+function chipRow(id, options, selected) {
+  return '<div class="chips" id="' + id + '" style="margin-bottom:0">' + options.map(function (o) {
+    return '<div class="chip' + (o[0] === selected ? ' sel' : '') + '" data-v="' + esc(o[0]) + '" onclick="pick(this)">' + o[1] + '</div>'; }).join('') + '</div>';
+}
+function actions(left, right) { return '<div class="actions">' + left + right + '</div>'; }
+var CANCEL = '<button class="btn ghost" onclick="closeModal()">Bekor qilish</button>';
+
+function buildModal(m) {
+  var p = m.p;
+  switch (m.type) {
+    case 'installer': {
+      var inst = p.id ? findInst(p.id) : null;
+      return '<h2>' + (inst ? "O'rnatuvchini tahrirlash" : "Yangi o'rnatib beruvchi") + '</h2>' +
+        '<label class="fl">Ismi</label><input type="text" id="f-name" data-autofocus placeholder="Masalan: Aziz aka" value="' + esc(inst ? inst.name : '') + '">' +
+        '<label class="fl">Telefon (ixtiyoriy)</label><input type="tel" id="f-phone" placeholder="+998 90 123 45 67" value="' + esc(inst ? inst.phone : '') + '">' +
+        actions(inst ? '<button class="btn danger" onclick="delInstaller(\'' + inst.id + '\')">O\'chirish</button>' : CANCEL,
+          '<button class="btn primary" onclick="saveInstaller(' + (inst ? "'" + inst.id + "'" : 'null') + ')">Saqlash</button>');
+    }
+    case 'object': {
+      var o = p.id ? findObj(p.id) : null;
+      return '<h2>' + (o ? 'Obyektni tahrirlash' : 'Yangi obyekt') + '</h2>' +
+        '<label class="fl">Obyekt nomi</label><input type="text" id="f-oname" data-autofocus placeholder="Masalan: Chorsu kafe" value="' + esc(o ? o.name : '') + '">' +
+        '<label class="fl">Turi</label>' + chipRow('f-otype', OBJ_TYPES.map(function (t) { return [t, typeLabel(t)]; }), o ? o.type : 'uy') +
+        '<label class="fl">Manzil (ixtiyoriy)</label><input type="text" id="f-oaddr" placeholder="Ko\'cha, mo\'ljal" value="' + esc(o ? o.address : '') + '">' +
+        actions(o ? '<button class="btn danger" onclick="delObject(\'' + o.id + '\')">O\'chirish</button>' : CANCEL,
+          '<button class="btn primary" onclick="saveObject(' + (o ? "'" + o.id + "'" : 'null') + ')">Saqlash</button>');
+    }
+    case 'norm': {
+      var n = p.id ? D().norms.filter(function (x) { return x.id === p.id; })[0] : null;
+      return '<h2>' + (n ? 'Materialni tahrirlash' : 'Yangi material') + '</h2><div class="msub">Har bir tur + o\'lcham uchun alohida formula</div>' +
+        '<label class="fl">Tezkor tanlash</label><div class="chips" style="margin-bottom:0">' + TYPE_PRESETS.map(function (t) {
+          return '<div class="chip sm" onclick="document.getElementById(\'f-ntype\').value=\'' + t + '\'">' + t + '</div>'; }).join('') + '</div>' +
+        '<label class="fl">Tur nomi</label><input type="text" id="f-ntype" placeholder="Masalan: Truba" value="' + esc(n ? n.type : '') + '">' +
+        '<label class="fl">Shakli</label>' + chipRow('f-nshape', [['kvadrat', "▭ To'rtburchak"], ['krug', '◯ Krug']], n ? n.shape : 'kvadrat') +
+        '<label class="fl">O\'lchami</label><input type="text" id="f-nsize" placeholder="Masalan: 30x30 yoki 200" value="' + esc(n ? n.size : '') + '">' +
+        '<label class="fl">1 donaga ketadigan tunika</label><div style="display:flex;gap:8px">' +
+          '<input type="number" inputmode="decimal" id="f-ntun" placeholder="1.2" style="flex:1" value="' + (n ? n.tunikaPerUnit : '') + '">' +
+          '<select id="f-nunit" style="flex:1">' + ['kg', 'm²', 'list'].map(function (u) { return '<option' + (n && n.tunikaUnit === u ? ' selected' : '') + '>' + u + '</option>'; }).join('') + '</select></div>' +
+        '<label class="fl">Tunika narxi (so\'m / birlik)</label><input type="number" inputmode="numeric" id="f-nmat" placeholder="25000" value="' + (n ? n.materialPrice : '') + '">' +
+        '<label class="fl">Ish haqi (so\'m / dona)</label><input type="number" inputmode="numeric" id="f-nlab" placeholder="15000" value="' + (n ? n.laborPrice : '') + '">' +
+        '<div class="hint">1 dona narxi = tunika × tunika narxi + ish haqi</div>' +
+        actions(n ? '<button class="btn danger" onclick="delNorm(\'' + n.id + '\')">O\'chirish</button>' : CANCEL,
+          '<button class="btn primary" onclick="saveNorm(' + (n ? "'" + n.id + "'" : 'null') + ')">Saqlash</button>');
+    }
+    case 'item': {
+      return '<h2>Yangi buyurtma qatori</h2>' +
+        (D().norms.length ? '<label class="fl">Materiallardan tanlang</label><div class="chips" style="margin-bottom:0">' + D().norms.map(function (n) {
+          return '<div class="chip sm" onclick="fillFromNorm(\'' + n.id + '\')">' + itemName(n) + '</div>'; }).join('') + '</div>'
+          : '<div class="hint">Hali material yo\'q. "Materiallar" bo\'limidan qo\'shing, aks holda narx hisoblanmaydi.</div>') +
+        '<label class="fl">Tur</label><input type="text" id="f-itype" placeholder="Masalan: Truba">' +
+        '<label class="fl">Shakli</label>' + chipRow('f-ishape', [['kvadrat', "▭ To'rtburchak"], ['krug', '◯ Krug']], 'kvadrat') +
+        '<label class="fl">O\'lchami</label><input type="text" id="f-isize" placeholder="Masalan: 30x30">' +
+        '<label class="fl">Birligi</label>' + chipRow('f-iunit', [['dona', 'Dona'], ['metr', 'Metr']], 'dona') +
+        '<label class="fl">Buyurtma miqdori</label><input type="number" inputmode="decimal" id="f-iqty" placeholder="Masalan: 10">' +
+        '<label class="fl">Izoh (ixtiyoriy)</label><input type="text" id="f-inote" placeholder="Masalan: 0.7 qalinlik">' +
+        actions(CANCEL, '<button class="btn primary" onclick="saveItem()">Saqlash</button>');
+    }
+    case 'editItem': {
+      var it = findItem(p.id); if (!it) return '';
+      return '<h2>' + itemName(it) + '</h2><div class="msub">Buyurtma miqdorini yoki olingan sonni qo\'lda to\'g\'irlash</div>' +
+        '<div class="hint">Mahsulot olib ketilganda odatda <b>🧺 Olib ketish</b> dan foydalaning — u kim olgani va to\'lovni ham yozadi. Bu yer faqat xatoni tuzatish uchun.</div>' +
+        '<label class="fl">Buyurtma miqdori (' + esc(it.unit) + ')</label><input type="number" inputmode="decimal" id="f-eord" value="' + it.orderedQty + '">' +
+        '<label class="fl">Olib ketilgan</label><input type="number" inputmode="decimal" id="f-etak" value="' + it.takenQty + '">' +
+        '<label class="fl">Izoh</label><input type="text" id="f-enote" value="' + esc(it.note) + '">' +
+        actions('<button class="btn danger" onclick="delItem(\'' + it.id + '\')">O\'chirish</button>',
+          '<button class="btn primary" onclick="saveEditItem(\'' + it.id + '\')">Saqlash</button>');
+    }
+    case 'payment':
+      return '<h2>💵 To\'lov qabul qilish</h2><div class="msub">Qarzni to\'lash yoki oldindan (avans) to\'lov</div>' +
+        '<label class="fl">Summa (so\'m)</label><input type="number" inputmode="numeric" id="f-pay" data-autofocus placeholder="500000">' +
+        (p.debt > 0 ? '<div class="chips" style="margin:8px 0 0"><div class="chip sm" onclick="document.getElementById(\'f-pay\').value=' + Math.round(p.debt) + '">Butun qarz: ' + money(p.debt) + '</div></div>' : '') +
+        '<label class="fl">Izoh (ixtiyoriy)</label><input type="text" id="f-paynote" placeholder="Masalan: naqd, kartaga">' +
+        actions(CANCEL, '<button class="btn primary" onclick="savePayment()">Saqlash</button>');
+    case 'pickup': return buildPickupModal();
+    case 'invite': {
+      var bot = (D().config || {}).botUsername || '';
+      var instI = findInst(p.installerId) || {};
+      return '<h2>🔗 Kirish kodi</h2><div class="msub">' + esc(instI.name) + ' uchun bir martalik kod</div>' +
+        '<div class="code-box">' + esc(p.code) + '</div>' +
+        '<div class="hint">O\'rnatuvchi (yoki shogirdi) <b>@' + esc(bot || 'bot') + '</b> botini ochib, "Ochish" tugmasini bosadi va shu kodni kiritadi. Shundan so\'ng u faqat o\'z buyurtmalari va hisobini ko\'radi. Kod bir marta ishlaydi — yana bir kishini ulash uchun yangi kod yarating.</div>' +
+        '<div class="actions"><button class="btn ghost" onclick="copyText(\'' + esc(p.code) + '\')">📋 Nusxa olish</button>' +
+        '<button class="btn primary" onclick="shareInvite(\'' + esc(p.code) + '\')">✈️ Telegramda yuborish</button></div>' +
+        '<div class="actions" style="margin-top:10px"><button class="btn ghost" onclick="closeModal()">Yopish</button></div>';
+    }
+  }
+  return '';
+}
+
+// ---- Savatcha (olib ketish) ----
+function openPickup() {
+  var inst = findInst(S.installerId);
+  cart = { lines: {}, payMode: 'full', person: inst ? inst.name : '' };
+  openModal('pickup');
+}
+function buildPickupModal() {
+  var avail = itemsOf(S.objectId).filter(function (it) { return remaining(it) > 0; });
+  if (!avail.length) return '<h2>🧺 Olib ketish</h2><div class="hint">Bu obyektda olib ketiladigan qoldiq yo\'q.</div>' + actions('', '<button class="btn ghost" onclick="closeModal()">Yopish</button>');
+  return '<h2>🧺 Olib ketish</h2><div class="msub">Har bir mahsulotdan nechta olib ketilayotganini belgilang</div>' +
+    '<div style="margin-top:6px">' + avail.map(function (it) {
+      var hasPrice = it.cost && it.cost.hasNorm;
+      return '<div class="crow"><div class="m"><div class="n">' + itemName(it) + '</div>' +
+        '<div class="s">Qoldiq: ' + qty(remaining(it)) + ' ' + esc(it.unit) + (hasPrice ? ' · ' + money(it.cost.unitCost) + '/' + esc(it.unit) : ' · <span class="warn">narx yo\'q</span>') + '</div></div>' +
+        '<div class="step"><button class="mi" onclick="cartStep(\'' + it.id + '\',-1)">−</button>' +
+        '<input type="number" inputmode="decimal" id="cq-' + it.id + '" value="0" oninput="cartSet(\'' + it.id + '\', this.value)">' +
+        '<button class="pl" onclick="cartStep(\'' + it.id + '\',1)">+</button></div></div>';
+    }).join('') + '</div>' +
+    '<div class="chips" style="margin:10px 0 0"><div class="chip sm" onclick="cartAll()">Hammasini qo\'shish</div><div class="chip sm" onclick="cartClear()">Tozalash</div></div>' +
+    '<div class="ctotal"><span>Jami summa</span><span id="c-total">0 so\'m</span></div>' +
+    '<label class="fl">Kim oldi?</label><input type="text" id="f-person" placeholder="O\'rnatuvchi yoki shogird ismi" value="' + esc(cart.person) + '">' +
+    '<label class="fl">To\'lov</label><div class="chips" id="f-paymode" style="margin-bottom:0">' +
+      [['full', "To'liq to'landi"], ['partial', "Qisman to'landi"], ['none', "To'lanmadi (qarzga)"]].map(function (o) {
+        return '<div class="chip' + (o[0] === 'full' ? ' sel' : '') + '" onclick="setPayMode(this,\'' + o[0] + '\')">' + o[1] + '</div>'; }).join('') + '</div>' +
+    '<div id="paid-wrap" style="display:none"><label class="fl">Qancha to\'landi?</label><input type="number" inputmode="numeric" id="f-paid" placeholder="300000" oninput="cartTotal()"></div>' +
+    '<div class="hint" id="c-debt"></div>' +
+    actions(CANCEL, '<button class="btn primary" onclick="submitPickup()">Tasdiqlash</button>');
+}
+function cartSet(id, v) {
+  var it = findItem(id); if (!it) return;
+  var n = Math.max(0, Math.min(remaining(it), Number(v) || 0));
+  cart.lines[id] = n;
+  if (String(n) !== String(v) && v !== '') document.getElementById('cq-' + id).value = n;
+  cartTotal();
+}
+function cartStep(id, d) {
+  var it = findItem(id); if (!it) return;
+  var n = Math.max(0, Math.min(remaining(it), (cart.lines[id] || 0) + d));
+  cart.lines[id] = n; document.getElementById('cq-' + id).value = n;
+  try { tg && tg.HapticFeedback && tg.HapticFeedback.selectionChanged(); } catch (e) {}
+  cartTotal();
+}
+function cartAll() { itemsOf(S.objectId).forEach(function (it) { if (remaining(it) > 0) { cart.lines[it.id] = remaining(it); var el = document.getElementById('cq-' + it.id); if (el) el.value = remaining(it); } }); cartTotal(); }
+function cartClear() { Object.keys(cart.lines).forEach(function (id) { cart.lines[id] = 0; var el = document.getElementById('cq-' + id); if (el) el.value = 0; }); cartTotal(); }
+function cartTotal() {
+  var t = 0;
+  Object.keys(cart.lines).forEach(function (id) { var it = findItem(id); if (it && it.cost) t += (it.cost.unitCost || 0) * (cart.lines[id] || 0); });
+  var el = document.getElementById('c-total'); if (el) el.textContent = money(t);
+  var paid = cart.payMode === 'full' ? t : cart.payMode === 'partial' ? Math.min(t, Number(val('f-paid')) || 0) : 0;
+  var d = document.getElementById('c-debt');
+  if (d) d.innerHTML = t > 0 && t - paid > 0.5 ? '<span class="warn">Bu olib ketishdan qarz: <b>' + money(t - paid) + '</b></span>' : '';
+  return t;
+}
+function setPayMode(el, mode) { pick(el); cart.payMode = mode; document.getElementById('paid-wrap').style.display = mode === 'partial' ? 'block' : 'none'; cartTotal(); }
+function submitPickup() {
+  var lines = Object.keys(cart.lines).filter(function (id) { return cart.lines[id] > 0; }).map(function (id) { return { itemId: id, qty: cart.lines[id] }; });
+  if (!lines.length) return toast('Kamida bitta mahsulot sonini belgilang', true);
+  var person = val('f-person').trim();
+  if (!person) return toast('Kim olganini yozing', true);
+  if (cart.payMode === 'partial' && !(Number(val('f-paid')) > 0)) return toast("To'langan summani yozing", true);
+  act('pickup', { objectId: S.objectId, personName: person, lines: lines, payMode: cart.payMode, paidAmount: Number(val('f-paid')) || 0 }, 'Saqlandi ✓').catch(function () {});
+}
+
+// ---- Saqlash amallari ----
+function saveInstaller(id) {
+  var name = val('f-name').trim(); if (!name) return toast('Ismni kiriting', true);
+  act(id ? 'updateInstaller' : 'addInstaller', { id: id, name: name, phone: val('f-phone') }, 'Saqlandi ✓').catch(function () {});
+}
+function delInstaller(id) {
+  askConfirm("Bu o'rnatuvchi, uning barcha obyektlari, buyurtmalari va to'lovlari butunlay o'chiriladi. Davom etasizmi?").then(function (ok) {
+    if (ok) act('deleteInstaller', { id: id }, "O'chirildi").then(function () { go('installers'); }).catch(function () {});
+  });
+}
+function saveObject(id) {
+  var name = val('f-oname').trim(); if (!name) return toast('Obyekt nomini kiriting', true);
+  act(id ? 'updateObject' : 'addObject', { id: id, installerId: S.installerId, name: name, type: selVal('f-otype'), address: val('f-oaddr') }, 'Saqlandi ✓').catch(function () {});
+}
+function delObject(id) {
+  askConfirm("Obyekt va undagi barcha buyurtma, olib ketish va to'lov yozuvlari o'chiriladi. Davom etasizmi?").then(function (ok) {
+    if (ok) act('deleteObject', { id: id }, "O'chirildi").then(function () { goBack(); }).catch(function () {});
+  });
+}
+function saveNorm(id) {
+  var type = val('f-ntype').trim(), size = val('f-nsize').trim();
+  if (!type || !size) return toast("Tur va o'lchamni kiriting", true);
+  act(id ? 'updateNorm' : 'addNorm', { id: id, type: type, shape: selVal('f-nshape'), size: size, tunikaPerUnit: val('f-ntun'),
+    tunikaUnit: val('f-nunit'), materialPrice: val('f-nmat'), laborPrice: val('f-nlab') }, 'Saqlandi ✓').catch(function () {});
+}
+function delNorm(id) {
+  askConfirm("Material o'chirilsinmi? Shu materialga bog'langan buyurtmalarda narx hisoblanmay qoladi.").then(function (ok) {
+    if (ok) act('deleteNorm', { id: id }, "O'chirildi").catch(function () {});
+  });
+}
+function fillFromNorm(id) {
+  var n = D().norms.filter(function (x) { return x.id === id; })[0]; if (!n) return;
+  document.getElementById('f-itype').value = n.type; document.getElementById('f-isize').value = n.size;
+  document.querySelectorAll('#f-ishape .chip').forEach(function (c) { c.classList.toggle('sel', c.getAttribute('data-v') === n.shape); });
+  var q = document.getElementById('f-iqty'); if (q) q.focus();
+}
+function saveItem() {
+  var type = val('f-itype').trim(), size = val('f-isize').trim(), q = Number(val('f-iqty'));
+  if (!type || !size) return toast("Tur va o'lchamni kiriting", true);
+  if (!(q > 0)) return toast('Miqdorni kiriting', true);
+  act('addItem', { objectId: S.objectId, type: type, shape: selVal('f-ishape'), size: size, unit: selVal('f-iunit'), orderedQty: q, note: val('f-inote') }, "Qo'shildi ✓").catch(function () {});
+}
+function saveEditItem(id) {
+  var o = Number(val('f-eord')), t = Number(val('f-etak'));
+  if (!(o > 0)) return toast("Buyurtma miqdori noto'g'ri", true);
+  act('updateItem', { id: id, orderedQty: o, takenQty: t, note: val('f-enote') }, 'Saqlandi ✓').catch(function () {});
+}
+function delItem(id) {
+  askConfirm("Bu qator o'chirilsinmi?").then(function (ok) { if (ok) act('deleteItem', { id: id }, "O'chirildi").catch(function () {}); });
+}
+function savePayment() {
+  var a = Number(val('f-pay')); if (!(a > 0)) return toast('Summani kiriting', true);
+  act('addPayment', { objectId: S.objectId, amount: a, note: val('f-paynote') }, "To'lov saqlandi ✓").catch(function () {});
+}
+function cancelPickup(id) {
+  askConfirm("Bu olib ketish bekor qilinsinmi? Mahsulotlar soni qaytariladi.").then(function (ok) { if (ok) act('deletePickup', { id: id }, 'Bekor qilindi').catch(function () {}); });
+}
+function cancelPayment(id) {
+  askConfirm("Bu to'lov bekor qilinsinmi?").then(function (ok) { if (ok) act('deletePayment', { id: id }, 'Bekor qilindi').catch(function () {}); });
+}
+function completeObject(id) {
+  var f = finance(function (r) { return r.objectId === id; });
+  var warnParts = [];
+  if (f.pending) warnParts.push(f.pending + ' ta mahsulot hali to\'liq olib ketilmagan');
+  if (f.debt > 0.5) warnParts.push(money(f.debt) + ' qarz bor');
+  var msg = warnParts.length ? 'Diqqat: ' + warnParts.join(' va ') + '. Baribir yakunlaysizmi?' : 'Obyekt tugallangan deb belgilansinmi?';
+  askConfirm(msg).then(function (ok) { if (ok) act('setObjectCompleted', { id: id, completed: true }, 'Obyekt yakunlandi ✓').catch(function () {}); });
+}
+function reopenObject(id) {
+  askConfirm('Obyekt qayta ochilsinmi?').then(function (ok) { if (ok) act('setObjectCompleted', { id: id, completed: false }, 'Qayta ochildi').catch(function () {}); });
+}
+function makeInvite(installerId) {
+  api('makeInvite', { installerId: installerId }).then(function (j) { openModal('invite', { installerId: installerId, code: j.invite.code }); }).catch(function () {});
+}
+function shareInvite(code) {
+  var bot = (D().config || {}).botUsername || '';
+  var text = "Assalomu alaykum! Buyurtmalaringiz va hisob-kitobni ko'rish uchun @" + bot + " botini oching, \"Ochish\" tugmasini bosing va shu kodni kiriting: " + code;
+  var url = 'https://t.me/share/url?url=' + encodeURIComponent('https://t.me/' + bot) + '&text=' + encodeURIComponent(text);
+  try { if (tg && tg.openTelegramLink) { tg.openTelegramLink(url); return; } } catch (e) {}
+  window.open(url, '_blank');
+}
+function openLink(u) { try { if (tg && tg.openLink) { tg.openLink(u); return; } } catch (e) {} window.open(u, '_blank'); }
+function copyText(t) {
+  try { navigator.clipboard.writeText(t).then(function () { toast('Nusxa olindi'); }, function () { toast('Kodni qo\'lda belgilab oling'); }); }
+  catch (e) { toast('Kodni qo\'lda belgilab oling'); }
+}
+function userAction(action, tid, msg) {
+  var q = action === 'blockUser' ? 'Bu foydalanuvchi bloklansinmi?' : action === 'resetUser' ? 'Bu akkauntning ruxsati olib tashlansinmi?' : 'Bu foydalanuvchi xodim (to\'liq huquqli) qilinsinmi?';
+  askConfirm(q).then(function (ok) { if (ok) act(action, { telegramId: tid }, msg).catch(function () {}); });
+}
+function loadHistory() {
+  var oid = S.objectId;
+  api('history', { objectId: oid }).then(function (j) { S.history[oid] = j.logs || []; renderScreen(true); }).catch(function () {});
+}
+function redeem() {
+  var code = val('f-code').trim(); if (!code) return toast('Kodni kiriting', true);
+  api('redeemCode', { code: code }).then(function () { toast('Xush kelibsiz!'); }).catch(function () {});
+}
+
+// ================== RENDER ==================
+function setSearch(key, v, id) { S.q[key] = v; renderScreen(true); }
+function searchBox(key, placeholder) {
+  return '<div class="searchbox"><span style="opacity:.5">🔍</span><input type="text" id="s-' + key + '" placeholder="' + placeholder + '" value="' + esc(S.q[key]) + '" oninput="setSearch(\'' + key + '\', this.value)"></div>';
+}
+function topbar(title, sub, left, right) {
+  return '<header class="topbar">' + (left || '') + '<div class="ttl"><h1>' + title + '</h1>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>' + (right || '') + '</header>';
+}
+function backBtn() { return (tg && tg.platform && tg.platform !== 'unknown') ? '' : '<button class="hbtn" onclick="goBack()">←</button>'; }
+function updateBackButton() {
+  if (!tg || !tg.BackButton) return;
+  var show = !!modal || ['objectDetail', 'installerDetail', 'users'].indexOf(S.screen) >= 0;
+  try { show ? tg.BackButton.show() : tg.BackButton.hide(); } catch (e) {}
+}
+
+function renderScreen(keepFocus) {
+  var active = null, s1 = null, s2 = null;
+  if (keepFocus && document.activeElement && document.activeElement.tagName === 'INPUT' && document.activeElement.id && !document.getElementById('modal-slot').contains(document.activeElement)) {
+    active = document.activeElement.id; s1 = document.activeElement.selectionStart; s2 = document.activeElement.selectionEnd;
+  }
+  var r = ({ loading: vLoading, fatal: vFatal, pending: vPending, blocked: vBlocked, installers: vInstallers, installerDetail: vInstallerDetail,
+    objectDetail: vObjectDetail, allObjects: vAllObjects, materials: vMaterials, users: vUsers, myHome: vMyHome })[S.screen] || vLoading;
+  var out = r();
+  document.getElementById('topbar-slot').innerHTML = out.top || '';
+  document.getElementById('main-slot').innerHTML = out.main || '';
+  document.getElementById('tabbar-slot').innerHTML = isAdmin() && ['installers','installerDetail','objectDetail','allObjects','materials','users'].indexOf(S.screen) >= 0 ? tabbar() : '';
+  updateBackButton();
+  if (active) { var el = document.getElementById(active); if (el) { el.focus(); try { el.setSelectionRange(s1, s2); } catch (e) {} } }
+}
+function tabbar() {
+  var t = function (screens, ic, label, fn) {
+    return '<button class="' + (screens.indexOf(S.screen) >= 0 ? 'active' : '') + '" onclick="' + fn + '"><span class="ic">' + ic + '</span>' + label + '</button>'; };
+  var inObj = S.screen === 'objectDetail';
+  return '<div class="tabbar"><div class="in">' +
+    t(['installers','installerDetail','users'].concat(inObj && S.cameFrom !== 'allObjects' ? ['objectDetail'] : []), '👷', "O'rnatuvchilar", "go('installers')") +
+    t(['allObjects'].concat(inObj && S.cameFrom === 'allObjects' ? ['objectDetail'] : []), '🗂️', 'Obyektlar', "go('allObjects')") +
+    t(['materials'], '📐', 'Materiallar', "go('materials')") + '</div></div>';
+}
+
+function vLoading() { return { main: '<div class="center-screen"><div class="big">⏳</div><div class="meta">Yuklanmoqda...</div></div>' }; }
+function vFatal() {
+  return { main: '<div class="center-screen"><div class="big">' + (S.fatal.icon || '⚠️') + '</div><h2>' + esc(S.fatal.title) + '</h2><div class="meta">' + esc(S.fatal.text) + '</div>' +
+    (S.fatal.retry ? '<div class="box"><button class="btn primary" style="width:100%" onclick="boot()">↻ Qayta urinish</button></div>' : '') + '</div>' };
+}
+function vPending() {
+  var me = S.me || {};
+  return { main: '<div class="center-screen"><div class="big">👋</div><h2>Assalomu alaykum' + (me.name ? ', ' + esc(me.name) : '') + '!</h2>' +
+    '<div class="meta">Ilovaga kirish uchun kod kerak.</div>' +
+    '<div class="box"><label class="fl">Kirish kodi</label><input type="text" autocomplete="off" autocapitalize="off" id="f-code" placeholder="Kodni kiriting">' +
+    '<button class="btn primary" style="width:100%;margin-top:12px" onclick="redeem()">Kirish</button>' +
+    '<div class="hint" style="margin-top:14px">• <b>O\'rnatuvchi</b> bo\'lsangiz — ustaxonadan berilgan kodni kiriting.<br>• <b>Xodim</b> bo\'lsangiz — egasiga ayting, u sizni "Xodimlar" bo\'limida tasdiqlaydi, keyin pastdagi tugmani bosing.</div>' +
+    '<button class="btn ghost" style="width:100%;margin-top:12px" onclick="refresh()">↻ Yangilash</button>' +
+    '<div class="hint" style="text-align:center;margin-top:10px">Telegram ID: ' + esc(me.id) + '</div></div></div>' };
+}
+function vBlocked() { return { main: '<div class="center-screen"><div class="big">🚫</div><h2>Kirish yopilgan</h2><div class="meta">Ustaxona egasiga murojaat qiling.</div></div>' }; }
+
+// ---- ADMIN: O'rnatuvchilar ro'yxati ----
+function vInstallers() {
+  var q = S.q.inst.trim().toLowerCase();
+  var all = D().installers.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+  var list = q ? all.filter(function (i) { return (i.name + ' ' + i.phone).toLowerCase().indexOf(q) >= 0; }) : all;
+  var pendingUsers = D().users.filter(function (u) { return u.role === 'pending' && u.telegramId !== (S.me || {}).id; }).length;
+  var body = !all.length ? '<div class="empty"><span class="ic">👷</span>Hali o\'rnatib beruvchilar yo\'q.<br>Pastdagi + tugmasi bilan qo\'shing.</div>'
+    : !list.length ? '<div class="empty">Hech narsa topilmadi.</div>'
+    : list.map(function (i) {
+      var f = finance(function (r) { return r.installerId === i.id; });
+      var open = D().objects.filter(function (o) { return o.installerId === i.id && !Number(o.completed); }).length;
+      return '<div class="card tap" onclick="openInstaller(\'' + i.id + '\')"><div class="avatar" style="background:' + avatarColor(i.id) + '">' + esc(initials(i.name)) + '</div>' +
+        '<div class="body"><h3>' + esc(i.name) + '</h3><div class="meta">' + open + ' ochiq obyekt' + (i.phone ? ' · ' + esc(i.phone) : '') + '</div></div>' +
+        (f.debt > 0.5 ? '<span class="pill bad">Qarz ' + money(f.debt) + '</span>' : '') + '<div class="chev">›</div></div>';
+    }).join('');
+  return {
+    top: topbar("O'rnatib beruvchilar", '', '', '<button class="hbtn" onclick="refresh()" title="Yangilash">↻</button><button class="hbtn" onclick="go(\'users\')" title="Xodimlar" style="position:relative">⚙️' +
+      (pendingUsers ? '<span style="position:absolute;top:-4px;right:-4px;background:var(--bad);color:#fff;border-radius:10px;font-size:10px;padding:1px 5px;font-weight:800">' + pendingUsers + '</span>' : '') + '</button>'),
+    main: (all.length > 4 ? searchBox('inst', 'Ism yoki telefon...') : '') + body + '<button class="fab" onclick="openModal(\'installer\')">+</button>'
+  };
+}
+
+// ---- ADMIN: O'rnatuvchi sahifasi ----
+function objCard(o, from, showInst) {
+  var its = itemsOf(o.id), pend = its.filter(function (it) { return remaining(it) > 0; }).length;
+  var f = finance(function (r) { return r.objectId === o.id; });
+  var inst = showInst ? findInst(o.installerId) : null;
+  return '<div class="card tap" onclick="openObject(\'' + o.id + '\',\'' + from + '\')"><div class="avatar" style="background:var(--surface-2);font-size:20px">' + objIcon(o.type) + '</div>' +
+    '<div class="body"><h3>' + esc(o.name) + '</h3><div class="meta">' + (inst ? esc(inst.name) + ' · ' : '') + its.length + ' mahsulot' +
+    (pend ? ' · <span style="color:var(--accent);font-weight:700">' + pend + ' tayyor emas</span>' : '') +
+    (f.debt > 0.5 ? ' · <span style="color:var(--bad);font-weight:700">qarz ' + money(f.debt) + '</span>' : '') + '</div></div>' +
+    statusPill(objStatus(o)) + '<div class="chev">›</div></div>';
+}
+function statGrid(f, objCount) {
+  return '<div class="stat-grid">' +
+    '<div class="stat accent"><div class="v">' + objCount + '</div><div class="l">Obyektlar</div></div>' +
+    '<div class="stat"><div class="v">' + money(f.ordered) + '</div><div class="l">Jami buyurtma summasi</div></div>' +
+    '<div class="stat"><div class="v">' + money(f.paid) + '</div><div class="l">To\'langan</div></div>' +
+    '<div class="stat"><div class="v" style="color:' + (f.debt > 0.5 ? 'var(--bad)' : 'var(--good)') + '">' + money(Math.max(0, f.debt)) + '</div><div class="l">' + (f.debt < -0.5 ? 'Qarz yo\'q (avans ' + money(-f.debt) + ')' : 'Qarz') + '</div></div></div>';
+}
+function objectsSplit(objs, from, showInst) {
+  var open = objs.filter(function (o) { return !Number(o.completed); }), done = objs.filter(function (o) { return Number(o.completed); });
+  open.sort(function (a, b) { return b.createdAt - a.createdAt; }); done.sort(function (a, b) { return (b.completedAt || 0) - (a.completedAt || 0); });
+  return '<div class="sec">Ochiq obyektlar (' + open.length + ')</div>' + (open.length ? open.map(function (o) { return objCard(o, from, showInst); }).join('') : '<div class="empty" style="padding:20px">Ochiq obyekt yo\'q</div>') +
+    (done.length ? '<div class="sec">Tugallangan obyektlar (' + done.length + ')</div>' + done.map(function (o) { return objCard(o, from, showInst); }).join('') : '');
+}
+function vInstallerDetail() {
+  var i = findInst(S.installerId); if (!i) return vLoading();
+  var objs = D().objects.filter(function (o) { return o.installerId === i.id; });
+  var f = finance(function (r) { return r.installerId === i.id; });
+  var accounts = D().users.filter(function (u) { return u.role === 'installer' && u.installerId === i.id; });
+  var tgBlock = '<div class="sec">Telegram orqali kirish</div><div class="card block">' +
+    (accounts.length ? accounts.map(function (u) { return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0"><div><b>' + esc(u.name) + '</b>' +
+      (u.username ? ' <span class="meta">@' + esc(u.username) + '</span>' : '') + '</div><button class="link danger" onclick="userAction(\'resetUser\',\'' + esc(u.telegramId) + '\',\'Uzildi\')">Uzish</button></div>'; }).join('')
+      : '<div class="meta">Hali hech kim ulanmagan.</div>') +
+    (i.inviteCode ? '<div class="meta" style="margin-top:6px">Faol kod: <b style="color:var(--text);letter-spacing:2px">' + esc(i.inviteCode) + '</b></div>' : '') +
+    '<button class="link" onclick="makeInvite(\'' + i.id + '\')">🔗 ' + (i.inviteCode ? 'Kodni ko\'rsatish / yangilash' : 'Kirish kodi yaratish') + '</button></div>';
+  return {
+    top: topbar(esc(i.name), esc(i.phone || ''), backBtn(), '<button class="hbtn" onclick="openModal(\'installer\',{id:\'' + i.id + '\'})">✏️</button>'),
+    main: (objs.length ? statGrid(f, objs.length) : '') + (objs.length ? objectsSplit(objs, 'installerDetail', false) : '<div class="empty"><span class="ic">🏗️</span>Hali obyekt yo\'q.<br>+ tugmasi bilan qo\'shing.</div>') +
+      tgBlock + '<button class="fab" onclick="openModal(\'object\')">+</button>'
+  };
+}
+
+// ---- Obyekt sahifasi (admin va o'rnatuvchi) ----
+function vObjectDetail() {
+  var o = findObj(S.objectId); if (!o) return vLoading();
+  var admin = isAdmin();
+  var inst = findInst(o.installerId);
+  var its = itemsOf(o.id);
+  var f = finance(function (r) { return r.objectId === o.id; });
+  var st = objStatus(o);
+  var canPick = admin && !Number(o.completed) && its.some(function (it) { return remaining(it) > 0; });
+
+  var banner = '<div class="banner"><div>' + statusPill(st) + (o.completedAt ? ' <span class="meta">' + dshort(o.completedAt) + '</span>' : '') + '</div>' +
+    (admin ? (Number(o.completed) ? '<button class="link" onclick="reopenObject(\'' + o.id + '\')">↺ Qayta ochish</button>' : '<button class="link" onclick="completeObject(\'' + o.id + '\')">✅ Yakunlash</button>') : '') + '</div>';
+
+  var tun = 0, mat = 0, lab = 0;
+  its.forEach(function (it) { if (it.cost) { tun += it.cost.tunika || 0; mat += it.cost.materialSom || 0; lab += it.cost.laborSom || 0; } });
+  var summary = its.length ? '<div class="summary">' +
+    (admin ? '<div class="row"><span>Tunika sarfi</span><span>' + qty(tun) + '</span></div><div class="row"><span>Material</span><span>' + money(mat) + '</span></div><div class="row"><span>Ish haqi</span><span>' + money(lab) + '</span></div>' : '') +
+    '<div class="row total"><span>Jami buyurtma summasi</span><span>' + money(f.ordered) + '</span></div>' +
+    '<div class="row"><span>Olib ketilgan (summa)</span><b>' + money(f.taken) + '</b></div>' +
+    '<div class="row ok"><span>To\'langan</span><b>' + money(f.paid) + '</b></div>' +
+    (f.debt < -0.5 ? '<div class="row ok"><span>Oldindan to\'langan (avans)</span><b>' + money(-f.debt) + '</b></div>' : '<div class="row debt"><span>Qarz</span><b>' + money(Math.max(0, f.debt)) + '</b></div>') +
+    '</div>' : '';
+
+  var actionsRow = admin ? '<div style="display:flex;gap:10px;margin-bottom:12px">' +
+    (canPick ? '<button class="btn primary" onclick="openPickup()">🧺 Olib ketish</button>' : '') +
+    '<button class="btn good" onclick="openModal(\'payment\',{debt:' + Math.max(0, f.debt) + '})">💵 To\'lov</button></div>' : '';
+
+  var q = S.q.items.trim().toLowerCase();
+  var fl = q ? its.filter(function (it) { return (it.type + ' ' + it.size + ' ' + it.note).toLowerCase().indexOf(q) >= 0; }) : its;
+  fl.sort(function (a, b) { return (remaining(b) > 0) - (remaining(a) > 0) || a.type.localeCompare(b.type); });
+  var table = !its.length ? '<div class="empty"><span class="ic">📦</span>Hali buyurtma yo\'q.' + (admin ? '<br>+ tugmasi bilan qo\'shing.' : '') + '</div>'
+    : !fl.length ? '<div class="empty">Hech narsa topilmadi.</div>'
+    : '<div class="tlist">' + fl.map(function (it) {
+      var s = itemStatus(it);
+      return '<div class="trow"><div class="m"><div class="n"><span class="shape">' + (it.shape === 'krug' ? '◯' : '▭') + '</span>' + itemName(it) + ' <span class="pill ' + s + '">' + itemStatusLabel(s) + '</span></div>' +
+        '<div class="s">' + (it.note ? esc(it.note) + ' · ' : '') + (it.cost && it.cost.hasNorm ? money(it.cost.total) : '<span class="warn">narx yo\'q</span>') +
+        (remaining(it) > 0 && it.takenQty > 0 ? ' · qoldiq ' + qty(remaining(it)) : '') + '</div></div>' +
+        '<div class="q"><b>' + qty(it.takenQty) + '</b> / ' + qty(it.orderedQty) + ' ' + esc(it.unit) + '</div>' +
+        (admin ? '<button class="ibtn" onclick="openModal(\'editItem\',{id:\'' + it.id + '\'})">✎</button>' : '') + '</div>';
+    }).join('') + '</div>';
+
+  var evs = D().pickups.filter(function (p) { return p.objectId === o.id; }).map(function (p) { p._k = 'pk'; return p; })
+    .concat(D().payments.filter(function (p) { return p.objectId === o.id; }).map(function (p) { p._k = 'pay'; return p; }))
+    .sort(function (a, b) { return b.timestamp - a.timestamp; });
+  var hist = evs.length ? '<div class="sec">Olib ketish va to\'lovlar</div><div class="card block">' + evs.map(function (e) {
+    if (e._k === 'pk') return '<div class="hist"><div class="top"><span>🧺 ' + esc(e.personName) + ' oldi</span><span class="meta">' + dt(e.timestamp) + '</span></div>' +
+      '<div class="it">' + (e.items || []).map(function (l) { return itemName(l) + ' ×' + qty(l.qty); }).join(', ') + '</div>' +
+      '<div class="mo"><span>Jami ' + money(e.totalAmount) + ' · to\'landi ' + money(e.amountPaid) + (e.amountOwed > 0.5 ? ' · <span class="warn">qarzga ' + money(e.amountOwed) + '</span>' : '') + '</span>' +
+      (admin ? '<button class="link danger" onclick="cancelPickup(\'' + e.id + '\')">✕</button>' : '') + '</div></div>';
+    return '<div class="hist"><div class="top"><span>💵 To\'lov</span><span class="meta">' + dt(e.timestamp) + '</span></div>' +
+      '<div class="mo"><span style="color:var(--good);font-weight:700">' + money(e.amount) + (e.note ? ' <span class="meta">— ' + esc(e.note) + '</span>' : '') + '</span>' +
+      (admin ? '<button class="link danger" onclick="cancelPayment(\'' + e.id + '\')">✕</button>' : '') + '</div></div>';
+  }).join('') + '</div>' : '';
+
+  var logs = S.history[o.id];
+  var logHtml = !admin ? '' : logs ? '<div class="sec">Barcha o\'zgarishlar</div><div class="card block">' + (logs.length ? logs.map(function (l) {
+      return '<div class="hist"><div class="top"><span>' + esc(l.action) + '</span><span class="meta">' + dt(l.timestamp) + '</span></div><div class="it">' + esc(l.note) + (l.byUser ? ' · ' + esc(l.byUser) : '') + '</div></div>'; }).join('') : '<div class="meta">Yozuv yo\'q</div>') + '</div>'
+    : '<button class="link" onclick="loadHistory()">🕐 Barcha o\'zgarishlar tarixi</button>';
+
+  return {
+    top: topbar(esc(o.name), (inst && admin ? esc(inst.name) + ' · ' : '') + typeLabel(o.type) + (o.address ? ' · ' + esc(o.address) : ''), backBtn(),
+      admin ? '<button class="hbtn" onclick="openModal(\'object\',{id:\'' + o.id + '\'})">✏️</button>' : ''),
+    main: banner + summary + actionsRow + (its.length > 5 ? searchBox('items', "Tur yoki o'lcham...") : '') + table + hist + logHtml +
+      (admin ? '<button class="fab" onclick="openModal(\'item\')">+</button>' : '')
+  };
+}
+
+// ---- ADMIN: Barcha obyektlar ----
+function vAllObjects() {
+  var q = S.q.all.trim().toLowerCase();
+  var rows = D().objects.map(function (o) { var i = findInst(o.installerId); return { o: o, st: objStatus(o), inst: i ? i.name : '' }; });
+  var counts = { all: rows.length, yangi: 0, jarayonda: 0, tugallangan: 0 };
+  rows.forEach(function (r) { counts[r.st]++; });
+  var fl = rows.filter(function (r) { return (S.filterAll === 'all' || r.st === S.filterAll) && (!q || (r.o.name + ' ' + r.inst + ' ' + r.o.address).toLowerCase().indexOf(q) >= 0); });
+  fl.sort(function (a, b) { return b.o.createdAt - a.o.createdAt; });
+  var chip = function (k, label) { return '<div class="chip sm' + (S.filterAll === k ? ' sel' : '') + '" onclick="S.filterAll=\'' + k + '\';renderScreen()">' + label + ' (' + counts[k] + ')</div>'; };
+  return {
+    top: topbar('Barcha obyektlar', '', '', '<button class="hbtn" onclick="refresh()">↻</button>'),
+    main: '<div class="chips">' + chip('all', 'Barchasi') + chip('yangi', '🆕 Yangi') + chip('jarayonda', '🔧 Jarayonda') + chip('tugallangan', '✅ Tugallangan') + '</div>' +
+      (rows.length > 3 ? searchBox('all', "Obyekt, o'rnatuvchi yoki manzil...") : '') +
+      (!rows.length ? '<div class="empty"><span class="ic">🗂️</span>Hali obyektlar yo\'q.<br>O\'rnatuvchi sahifasidan qo\'shiladi.</div>' : !fl.length ? '<div class="empty">Hech narsa topilmadi.</div>'
+        : fl.map(function (r) { return objCard(r.o, 'allObjects', true); }).join(''))
+  };
+}
+
+// ---- ADMIN: Materiallar ----
+function vMaterials() {
+  var q = S.q.mat.trim().toLowerCase();
+  var all = D().norms.slice().sort(function (a, b) { return a.type.localeCompare(b.type) || String(a.size).localeCompare(String(b.size), undefined, { numeric: true }); });
+  var list = q ? all.filter(function (n) { return (n.type + ' ' + n.size).toLowerCase().indexOf(q) >= 0; }) : all;
+  var body = !all.length ? '<div class="empty"><span class="ic">📐</span>Hali material yo\'q.<br>Truba, otvod, polotvod va h.k. uchun + tugmasi bilan formula qo\'shing.</div>'
+    : !list.length ? '<div class="empty">Hech narsa topilmadi.</div>'
+    : list.map(function (n) {
+      var unit = (Number(n.tunikaPerUnit) || 0) * (Number(n.materialPrice) || 0) + (Number(n.laborPrice) || 0);
+      return '<div class="card tap" onclick="openModal(\'norm\',{id:\'' + n.id + '\'})"><div class="shape" style="width:40px;height:40px;font-size:17px;border-radius:10px">' + (n.shape === 'krug' ? '◯' : '▭') + '</div>' +
+        '<div class="body"><h3>' + itemName(n) + '</h3><div class="meta">Tunika ' + qty(n.tunikaPerUnit) + ' ' + esc(n.tunikaUnit) + ' × ' + money(n.materialPrice) + ' + ish ' + money(n.laborPrice) + '</div></div>' +
+        '<div style="text-align:right;flex-shrink:0"><b>' + money(unit) + '</b><div class="meta">1 dona</div></div></div>';
+    }).join('');
+  return {
+    top: topbar('Materiallar', all.length + ' ta formula', '', ''),
+    main: (all.length > 4 ? searchBox('mat', "Tur yoki o'lcham...") : '') + body + '<button class="fab" onclick="openModal(\'norm\')">+</button>'
+  };
+}
+
+// ---- ADMIN: Xodimlar ----
+function vUsers() {
+  var me = (S.me || {}).id;
+  var by = function (role) { return D().users.filter(function (u) { return u.role === role; }); };
+  var row = function (u, btns) {
+    var inst = u.installerId ? findInst(u.installerId) : null;
+    return '<div class="card"><div class="avatar" style="background:' + avatarColor(u.telegramId) + '">' + esc(initials(u.name)) + '</div><div class="body"><h3>' + esc(u.name) + (u.telegramId === me ? ' <span class="meta">(siz)</span>' : '') + '</h3>' +
+      '<div class="meta">' + (u.username ? '@' + esc(u.username) + ' · ' : '') + 'ID ' + esc(u.telegramId) + (inst ? ' · ' + esc(inst.name) : '') + '</div></div>' + btns + '</div>';
+  };
+  var pend = by('pending').filter(function (u) { return u.telegramId !== me; });
+  return {
+    top: topbar('Xodimlar va kirish', '', backBtn(), '<button class="hbtn" onclick="refresh()">↻</button>'),
+    main: ((D().config || {}).sheetUrl ? '<button class="link" onclick="openLink(\'' + jsq(D().config.sheetUrl) + '\')">📊 Barcha ma\'lumotlarni Google Sheets\'da ochish</button>' : '') +
+      '<div class="hint" style="margin-bottom:6px">Botni ochgan, lekin hali ruxsati yo\'q odamlar "So\'rovlar"da chiqadi. Xodimingiz bo\'lsa — tasdiqlang. O\'rnatuvchilar esa o\'z sahifasidagi kirish kodi bilan ulanadi.</div>' +
+      '<div class="sec">So\'rovlar (' + pend.length + ')</div>' + (pend.length ? pend.map(function (u) {
+        return row(u, '<button class="ibtn" style="background:var(--good-bg);color:var(--good)" onclick="userAction(\'approveUser\',\'' + esc(u.telegramId) + '\',\'Tasdiqlandi ✓\')">✓</button><button class="ibtn" onclick="userAction(\'blockUser\',\'' + esc(u.telegramId) + '\',\'Bloklandi\')">🚫</button>'); }).join('') : '<div class="meta" style="padding:0 4px">Yangi so\'rov yo\'q</div>') +
+      '<div class="sec">Xodimlar (' + by('admin').length + ')</div>' + by('admin').map(function (u) {
+        return row(u, u.telegramId === me ? '' : '<button class="link danger" onclick="userAction(\'resetUser\',\'' + esc(u.telegramId) + '\',\'Olib tashlandi\')">Olib tashlash</button>'); }).join('') +
+      (by('installer').length ? '<div class="sec">O\'rnatuvchi akkauntlari (' + by('installer').length + ')</div>' + by('installer').map(function (u) {
+        return row(u, '<button class="link danger" onclick="userAction(\'resetUser\',\'' + esc(u.telegramId) + '\',\'Uzildi\')">Uzish</button>'); }).join('') : '') +
+      (by('blocked').length ? '<div class="sec">Bloklanganlar</div>' + by('blocked').map(function (u) {
+        return row(u, '<button class="link" onclick="userAction(\'resetUser\',\'' + esc(u.telegramId) + '\',\'Blokdan chiqarildi\')">Chiqarish</button>'); }).join('') : '')
+  };
+}
+
+// ---- O'RNATUVCHI: bosh sahifa ----
+function vMyHome() {
+  var i = D().installers[0];
+  if (!i) return { main: '<div class="center-screen"><div class="big">🔌</div><h2>Hisob topilmadi</h2><div class="meta">Ustaxonaga murojaat qiling.</div></div>' };
+  var objs = D().objects;
+  var f = finance(function () { return true; });
+  return {
+    top: topbar('Salom, ' + esc((S.me || {}).name || i.name) + '!', esc(i.name) + ' — buyurtmalaringiz', '', '<button class="hbtn" onclick="refresh()">↻</button>'),
+    main: statGrid(f, objs.length) + (objs.length ? objectsSplit(objs, 'myHome', false) : '<div class="empty"><span class="ic">📦</span>Hozircha buyurtmalar yo\'q.</div>')
+  };
+}
+
+// ================== ISHGA TUSHIRISH ==================
+function boot() {
+  if (!CONFIG.API_URL || CONFIG.API_URL.indexOf('__') === 0) {
+    S.fatal = { icon: '⚙️', title: 'Sozlanmagan', text: "index.html ichida API_URL ko'rsatilmagan." }; S.screen = 'fatal'; return renderScreen();
+  }
+  if (!tg || !tg.initData) {
+    S.fatal = { icon: '✈️', title: 'Telegram orqali oching', text: "Bu ilova faqat Telegram bot ichida ishlaydi. Botni ochib, \"Ochish\" tugmasini bosing." }; S.screen = 'fatal'; return renderScreen();
+  }
+  S.screen = 'loading'; renderScreen();
+  api('load', {}, { silent: true, noRender: true }).then(afterData).catch(function (e) {
+    if (S.role === 'pending' || S.role === 'blocked') return afterData();
+    S.fatal = { icon: '⚠️', title: 'Ulanib bo\'lmadi', text: humanError(e.message), retry: true }; S.screen = 'fatal'; renderScreen();
+  });
+}
+document.addEventListener('visibilitychange', function () { if (!document.hidden && S.role && S.role !== 'pending') refresh(true); });
+setInterval(function () { if (!document.hidden && !S.busy && (S.role === 'admin' || S.role === 'installer')) refresh(true); }, 90000);
+boot();
+</script>
+</body>
+</html>
